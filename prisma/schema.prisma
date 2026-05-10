@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id              Int           @id @default(autoincrement())
+  orderDate       DateTime
+  customerName    String
+  businessPeriod  String        @default("XIONG_PERIOD")
+  partnerName     String        @default("Xiong")
+  customerSource  String
+  handoverPerson  String
+  degreeType      String
+  itemSummary     String
+  masterMQty      Int            @default(0)
+  masterLQty      Int            @default(0)
+  bachelorMQty    Int            @default(0)
+  bachelorLQty    Int            @default(0)
+  bearQty         Int            @default(0)
+  flagQty         Int            @default(0)
+  standardPriceGBP Float
+  adjustmentGBP    Float
+  finalPriceGBP    Float
+  totalPaidGBP     Float       @default(0)
+  remainingGBP     Float
+  paymentStatus    String        @default("UNPAID")
+  returnStatus     String        @default("NOT_COLLECTED")
+  orderStatus      String        @default("ACTIVE")
+  notes            String?
+  payments         Payment[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Payment {
+  id                 Int              @id @default(autoincrement())
+  orderId            Int
+  order              Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentDate        DateTime
+  amountGBP          Float
+  currencyLabel      String
+  actualPaymentNote  String?
+  paymentType        String
+  receiver           String           @default("Ryan")
+  customerSource     String
+  partnerName        String
+  businessPeriod     String
+  ryanShareGBP       Float
+  partnerShareGBP    Float
+  settlementStatus   String           @default("UNSETTLED")
+  settlementId       Int?
+  settlement         WeeklySettlement? @relation(fields: [settlementId], references: [id])
+  notes              String?
+  createdAt          DateTime         @default(now())
+}
+
+model WeeklySettlement {
+  id                            Int                    @id @default(autoincrement())
+  weekStartDate                 DateTime
+  weekEndDate                   DateTime
+  partnerName                   String
+  totalPaymentGBP               Float
+  totalRyanShareGBP             Float
+  totalPartnerShareGBP          Float
+  amountRyanShouldTransferGBP   Float
+  status                        String                 @default("CONFIRMED")
+  confirmedAt                   DateTime?
+  paidAt                        DateTime?
+  notes                         String?
+  payments                      Payment[]
+  createdAt                     DateTime               @default(now())
+}
+
+model Inventory {
+  id           Int               @id @default(autoincrement())
+  itemType     String
+  itemNameZh   String?
+  size         String
+  sizeLabel    String?
+  totalQty     Int
+  rentedQty    Int               @default(0)
+  availableQty Int
+  notes        String?
+
+  @@unique([itemType, size])
+}
