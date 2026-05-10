@@ -10,7 +10,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "import:historical": "tsx scripts/importHistoricalOrders.ts"
+    "import:historical": "tsx scripts/importHistoricalOrders.ts",
+    "db:push": "sqlite3 prisma/dev.db < prisma/init.sql",
+    "db:studio": "prisma studio",
+    "db:init": "npm run db:push && npm run prisma:generate && npm run prisma:seed"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
