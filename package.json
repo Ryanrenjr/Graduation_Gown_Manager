@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "import:historical": "tsx scripts/importHistoricalOrders.ts",
-    "db:push": "sqlite3 prisma/dev.db < prisma/init.sql",
+    "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:init": "npm run db:push && npm run prisma:generate && npm run prisma:seed"
   },
