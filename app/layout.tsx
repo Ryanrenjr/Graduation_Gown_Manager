@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   title: "Graduation Gown Rental Manager",
   description: "Orders, payments, weekly settlement and inventory.",
   icons: {
-    icon: "/icon.svg"
+    icon: [{ url: "/icon.svg?v=2", type: "image/svg+xml" }],
+    shortcut: "/icon.svg?v=2",
+    apple: "/icon.svg?v=2"
   }
 };
 
