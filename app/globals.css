@@ -64,7 +64,7 @@ body::after {
   .btn-primary,
   .btn-secondary,
   .btn-danger {
-    @apply inline-flex min-h-12 items-center justify-center rounded-full px-6 py-3 text-base font-bold transition duration-200 active:scale-[0.98];
+    @apply inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-full px-6 py-3 text-base font-bold transition duration-200 active:scale-[0.98];
   }
 
   .btn-primary {
@@ -437,6 +437,87 @@ body::after {
     @apply flex flex-col justify-between gap-5 rounded-[28px] border border-[#635bff]/20 bg-white/80 p-6 shadow-[0_24px_70px_rgba(99,91,255,0.14)] backdrop-blur-xl sm:flex-row sm:items-center;
   }
 
+  .today-command {
+    @apply relative overflow-hidden rounded-[34px] bg-[#07111f] p-6 shadow-[0_46px_130px_rgba(7,17,31,0.34)] sm:p-8 lg:p-10;
+  }
+
+  .today-command::before {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 top-0 h-1.5;
+    background: linear-gradient(90deg, #80e9ff, #635bff, #00d4a6, #ffd166);
+  }
+
+  .today-command::after {
+    content: "";
+    @apply pointer-events-none absolute -right-28 -top-36 h-96 w-96 opacity-45 blur-3xl;
+    background: radial-gradient(circle, rgba(128, 233, 255, 0.7), rgba(99, 91, 255, 0.45) 42%, transparent 72%);
+  }
+
+  .today-command-grid {
+    @apply pointer-events-none absolute inset-0 opacity-35;
+    background:
+      linear-gradient(90deg, rgba(128, 233, 255, 0.12) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(128, 233, 255, 0.09) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, black, transparent 86%);
+  }
+
+  .today-command-scan {
+    @apply pointer-events-none absolute inset-y-0 left-0 w-1/2 opacity-40;
+    background: linear-gradient(90deg, transparent, rgba(128, 233, 255, 0.32), transparent);
+    animation: command-scan 6s ease-in-out infinite;
+  }
+
+  .today-command-badge,
+  .today-live-chip {
+    @apply inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-4 text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-xl;
+  }
+
+  .today-live-chip span {
+    @apply h-2.5 w-2.5 rounded-full bg-[#00d4a6] shadow-[0_0_0_5px_rgba(0,212,166,0.16)];
+    animation: live-pulse 1.6s ease-in-out infinite;
+  }
+
+  .today-command-panel {
+    @apply relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.08] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_24px_70px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:p-6;
+  }
+
+  .today-command-panel::before {
+    content: "";
+    @apply pointer-events-none absolute inset-x-5 top-0 h-px opacity-80;
+    background: linear-gradient(90deg, transparent, rgba(128, 233, 255, 0.9), transparent);
+  }
+
+  .today-command-icon {
+    @apply grid h-12 w-12 place-items-center rounded-full bg-white text-[#07111f] shadow-[0_16px_34px_rgba(0,0,0,0.18)];
+  }
+
+  .today-metric {
+    @apply relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.07] p-4 transition duration-300 hover:-translate-y-1 hover:bg-white/[0.12];
+  }
+
+  .today-metric::after {
+    content: "";
+    @apply absolute inset-x-4 bottom-0 h-px opacity-70;
+    background: linear-gradient(90deg, transparent, rgba(128, 233, 255, 0.8), transparent);
+  }
+
+  .today-metric p {
+    @apply mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400;
+  }
+
+  .today-metric strong {
+    @apply mt-2 block text-2xl font-black tracking-[-0.03em] text-white;
+  }
+
+  .today-transfer-strip {
+    @apply mt-4 flex items-center justify-between gap-4 rounded-[22px] border border-cyan-200/20 bg-cyan-200/[0.08] px-4 py-3 text-sm font-black text-cyan-100;
+  }
+
+  .today-transfer-strip strong {
+    @apply text-lg text-white;
+  }
+
   .settlement-hero {
     @apply relative grid gap-8 overflow-hidden rounded-[32px] bg-[#0a2540] p-8 shadow-[0_34px_90px_rgba(10,37,64,0.26)] sm:p-10 lg:grid-cols-[1.4fr_0.8fr] lg:items-end;
   }
@@ -487,6 +568,26 @@ body::after {
   }
   50% {
     opacity: 1;
+  }
+}
+
+@keyframes command-scan {
+  0% {
+    transform: translateX(-130%);
+  }
+  52%, 100% {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 0.75;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
   }
 }
 

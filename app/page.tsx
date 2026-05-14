@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Activity,
   ArrowUpRight,
   Boxes,
   CalendarDays,
@@ -7,6 +8,8 @@ import {
   ChevronRight,
   CircleDollarSign,
   Clock3,
+  Radar,
+  ShieldCheck,
   Sparkles
 } from "lucide-react";
 import { InteractiveSurface } from "@/components/interactive-surface";
@@ -202,6 +205,16 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
       tone: "red"
     }
   ];
+  const todayOrders = orders.filter((order) => sameCalendarDay(order.orderDate, now)).length;
+  const todayPayments = payments
+    .filter((payment) => sameCalendarDay(payment.paymentDate, now))
+    .reduce((sum, payment) => sum + Number(payment.amountGBP), 0);
+  const todayLabel = new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-GB", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "2-digit"
+  }).format(now);
 
   return (
     <main className="page">
@@ -213,6 +226,16 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
             {t("newOrder")}
           </Link>
         }
+      />
+
+      <TodayCommandCenter
+        locale={locale}
+        todayLabel={todayLabel}
+        todayOrders={todayOrders}
+        todayPayments={todayPayments}
+        activeRentals={activeRentals}
+        availableInventory={availableInventory}
+        weekPartner={weekPartner}
       />
 
       <InteractiveSurface className="smart-view-card">
@@ -512,6 +535,113 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
   );
 }
 
+function TodayCommandCenter({
+  locale,
+  todayLabel,
+  todayOrders,
+  todayPayments,
+  activeRentals,
+  availableInventory,
+  weekPartner
+}: {
+  locale: Locale;
+  todayLabel: string;
+  todayOrders: number;
+  todayPayments: number;
+  activeRentals: number;
+  availableInventory: number;
+  weekPartner: number;
+}) {
+  const copy = {
+    title: locale === "zh" ? "今日运营中枢" : "Today Command Center",
+    subtitle: locale === "zh"
+      ? "实时查看今天的订单、库存和结算压力。"
+      : "A live-feeling pulse for today's orders, stock, and settlement pressure.",
+    date: locale === "zh" ? "今天" : "Today",
+    orders: locale === "zh" ? "今日订单" : "Today orders",
+    paid: locale === "zh" ? "今日收款" : "Today paid",
+    rentals: locale === "zh" ? "进行中租赁" : "Active rentals",
+    stock: locale === "zh" ? "可用库存" : "Available stock",
+    transfer: locale === "zh" ? "本周待转 Fay" : "Due to Fay",
+    signal: locale === "zh" ? "Neon 数据同步" : "Neon sync",
+    online: locale === "zh" ? "在线" : "online"
+  };
+
+  return (
+    <section className="today-command mb-6">
+      <div className="today-command-grid" />
+      <div className="today-command-scan" />
+      <div className="relative z-10 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="today-command-badge">
+              <Radar size={18} />
+              {copy.signal}
+            </span>
+            <span className="today-live-chip">
+              <span />
+              {copy.online}
+            </span>
+          </div>
+          <p className="mt-7 text-sm font-black uppercase tracking-[0.18em] text-cyan-200">
+            {copy.date}
+          </p>
+          <h2 className="mt-2 max-w-3xl text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
+            {todayLabel}
+          </h2>
+          <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-slate-300">
+            {copy.subtitle}
+          </p>
+        </div>
+
+        <div className="today-command-panel">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                {copy.title}
+              </p>
+              <p className="mt-1 text-2xl font-black text-white">
+                GBP {money(todayPayments)}
+              </p>
+            </div>
+            <span className="today-command-icon">
+              <Activity size={22} />
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TodayMetric icon={<CalendarDays size={18} />} label={copy.orders} value={String(todayOrders)} />
+            <TodayMetric icon={<CircleDollarSign size={18} />} label={copy.paid} value={`GBP ${money(todayPayments)}`} />
+            <TodayMetric icon={<ShieldCheck size={18} />} label={copy.rentals} value={String(activeRentals)} />
+            <TodayMetric icon={<Boxes size={18} />} label={copy.stock} value={String(availableInventory)} />
+          </div>
+          <div className="today-transfer-strip">
+            <span>{copy.transfer}</span>
+            <strong>GBP {money(weekPartner)}</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TodayMetric({
+  icon,
+  label,
+  value
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="today-metric">
+      <div className="text-cyan-200">{icon}</div>
+      <p>{label}</p>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 function HeroMetric({
   icon,
   label,
@@ -677,6 +807,15 @@ function shiftMonth(monthKey: string, offset: number) {
 function inDateRange(value: Date, start: Date, end: Date) {
   const time = new Date(value).getTime();
   return time >= start.getTime() && time <= end.getTime();
+}
+
+function sameCalendarDay(value: Date, target: Date) {
+  const date = new Date(value);
+  return (
+    date.getFullYear() === target.getFullYear() &&
+    date.getMonth() === target.getMonth() &&
+    date.getDate() === target.getDate()
+  );
 }
 
 function formatMonthLabel(date: Date, locale: Locale) {
