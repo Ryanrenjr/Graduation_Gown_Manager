@@ -5,7 +5,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Graduation Gown Rental Manager",
-  description: "Orders, payments, weekly settlement and inventory."
+  description: "Orders, payments, weekly settlement and inventory.",
+  icons: {
+    icon: "/icon.svg"
+  }
 };
 
 export default async function RootLayout({
