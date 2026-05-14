@@ -1,7 +1,7 @@
 "use client";
 
 import { Inventory, Order } from "@prisma/client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { saveOrder } from "@/app/actions";
 import { getT, Locale } from "@/lib/i18n";
 
@@ -23,6 +23,19 @@ type ExistingOrder = Pick<
   | "returnStatus"
 >;
 
+type QtyName =
+  | "masterMQty"
+  | "masterLQty"
+  | "bachelorMQty"
+  | "bachelorLQty"
+  | "bearQty"
+  | "flagQty";
+
+type QtyState = Record<QtyName, number>;
+
+const gownPriceGBP = 25;
+const accessoryPriceGBP = 5;
+
 export function OrderForm({
   order,
   locale = "en",
@@ -40,15 +53,31 @@ export function OrderForm({
     String(order?.adjustmentGBP ?? 0)
   );
   const [orderDate, setOrderDate] = useState(dateInput(order?.orderDate));
+  const [qty, setQty] = useState<QtyState>({
+    masterMQty: order?.masterMQty ?? 0,
+    masterLQty: order?.masterLQty ?? 0,
+    bachelorMQty: order?.bachelorMQty ?? 0,
+    bachelorLQty: order?.bachelorLQty ?? 0,
+    bearQty: order?.bearQty ?? 0,
+    flagQty: order?.flagQty ?? 0
+  });
+  const autoPrice = useMemo(() => calculateAutoPrice(qty), [qty]);
+
+  useEffect(() => {
+    if (!order) setStandard(autoPrice.toFixed(2));
+  }, [autoPrice, order]);
 
   const finalPrice = useMemo(() => {
     const total = Number(standard || 0) + Number(adjustment || 0);
     return Number.isFinite(total) ? total.toFixed(2) : "0.00";
   }, [standard, adjustment]);
   const dailyAvailability = useMemo(
-    () => availabilityForDate(inventory, existingOrders, orderDate, order?.id),
-    [inventory, existingOrders, orderDate, order?.id]
+    () => availabilityForDate(inventory, existingOrders, orderDate, order?.id, qty),
+    [inventory, existingOrders, orderDate, order?.id, qty]
   );
+  const updateQty = (name: QtyName, value: number) => {
+    setQty((current) => ({ ...current, [name]: Math.max(0, value || 0) }));
+  };
 
   return (
     <form action={saveOrder} className="grid gap-5">
@@ -121,12 +150,12 @@ export function OrderForm({
       </div>
 
       <div className="grid gap-5 md:grid-cols-3 lg:grid-cols-6">
-        <Qty label="Master M" name="masterMQty" value={order?.masterMQty} />
-        <Qty label="Master L" name="masterLQty" value={order?.masterLQty} />
-        <Qty label="Bachelor M" name="bachelorMQty" value={order?.bachelorMQty} />
-        <Qty label="Bachelor L" name="bachelorLQty" value={order?.bachelorLQty} />
-        <Qty label="Bear" name="bearQty" value={order?.bearQty} />
-        <Qty label="Flag" name="flagQty" value={order?.flagQty} />
+        <Qty label="Master M" name="masterMQty" value={qty.masterMQty} onChange={updateQty} />
+        <Qty label="Master L" name="masterLQty" value={qty.masterLQty} onChange={updateQty} />
+        <Qty label="Bachelor M" name="bachelorMQty" value={qty.bachelorMQty} onChange={updateQty} />
+        <Qty label="Bachelor L" name="bachelorLQty" value={qty.bachelorLQty} onChange={updateQty} />
+        <Qty label="Bear" name="bearQty" value={qty.bearQty} onChange={updateQty} />
+        <Qty label="Flag" name="flagQty" value={qty.flagQty} onChange={updateQty} />
       </div>
 
       {dailyAvailability.length ? (
@@ -178,6 +207,7 @@ export function OrderForm({
             value={standard}
             onChange={(event) => setStandard(event.target.value)}
             required
+            readOnly={!order}
           />
         </Field>
         {order ? (
@@ -277,11 +307,35 @@ function addUsage(usage: Map<string, number>, key: string, qty: number) {
   usage.set(key, (usage.get(key) ?? 0) + qty);
 }
 
+function calculateAutoPrice(qty: QtyState) {
+  const gownCount =
+    qty.masterMQty + qty.masterLQty + qty.bachelorMQty + qty.bachelorLQty;
+  const accessoryCount = qty.bearQty + qty.flagQty;
+  return gownCount * gownPriceGBP + accessoryCount * accessoryPriceGBP;
+}
+
+function selectedUsage(qty: QtyState) {
+  const usage = new Map<string, number>();
+  addUsage(usage, "MASTER_GOWN:M", qty.masterMQty);
+  addUsage(usage, "MASTER_GOWN:L", qty.masterLQty);
+  addUsage(usage, "BACHELOR_GOWN:M", qty.bachelorMQty);
+  addUsage(usage, "BACHELOR_GOWN:L", qty.bachelorLQty);
+  addUsage(usage, "BEAR:NONE", qty.bearQty);
+  addUsage(usage, "FLAG:NONE", qty.flagQty);
+
+  const gownCount =
+    qty.masterMQty + qty.masterLQty + qty.bachelorMQty + qty.bachelorLQty;
+  addUsage(usage, "HAT:ONE_SIZE", gownCount);
+  addUsage(usage, "SASH:ONE_SIZE", gownCount);
+  return usage;
+}
+
 function availabilityForDate(
   inventory: Inventory[],
   orders: ExistingOrder[],
   selectedDate: string,
-  excludeOrderId?: number
+  excludeOrderId?: number,
+  currentQty?: QtyState
 ) {
   const totals = new Map<string, number>();
   for (const item of inventory) {
@@ -319,16 +373,19 @@ function availabilityForDate(
     ["BEAR:NONE", "小熊"],
     ["FLAG:NONE", "小旗"]
   ];
+  const currentUsage = currentQty ? selectedUsage(currentQty) : new Map<string, number>();
 
   return items.map(([key, label]) => {
     const total = totals.get(key) ?? 0;
     const used = usage.get(key) ?? 0;
-    const available = Math.max(total - used, 0);
+    const selected = currentUsage.get(key) ?? 0;
+    const available = Math.max(total - used - selected, 0);
     return {
       key,
       label,
       total,
       used,
+      selected,
       available,
       percent: total > 0 ? Math.round((available / total) * 100) : 0
     };
@@ -347,11 +404,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Qty({
   label,
   name,
-  value
+  value,
+  onChange
 }: {
   label: string;
-  name: string;
-  value?: number;
+  name: QtyName;
+  value: number;
+  onChange: (name: QtyName, value: number) => void;
 }) {
   return (
     <Field label={label}>
@@ -360,7 +419,8 @@ function Qty({
         type="number"
         min="0"
         name={name}
-        defaultValue={value ?? 0}
+        value={value}
+        onChange={(event) => onChange(name, Number(event.target.value))}
       />
     </Field>
   );
