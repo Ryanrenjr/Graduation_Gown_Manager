@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Payment } from "@prisma/client";
 import {
   buildItemSummary,
   calculateShares,
@@ -197,8 +198,10 @@ async function refreshOrderPaymentState(orderId: number) {
 
   const totalPaidGBP =
     Math.round(
-      order.payments.reduce((sum, payment) => sum + Number(payment.amountGBP), 0) *
-        100
+      order.payments.reduce(
+        (sum: number, payment: Payment) => sum + Number(payment.amountGBP),
+        0
+      ) * 100
     ) / 100;
   const finalPriceGBP = Number(order.finalPriceGBP);
   const remainingGBP = Math.round((finalPriceGBP - totalPaidGBP) * 100) / 100;
@@ -517,7 +520,8 @@ export async function deleteOrder(orderId: number, formData: FormData) {
   }
 
   const hasSettledPayments = order.payments.some(
-    (payment) => payment.settlementStatus === "SETTLED" || payment.settlementId
+    (payment: Payment) =>
+      payment.settlementStatus === "SETTLED" || payment.settlementId
   );
 
   if (hasSettledPayments) {
@@ -553,15 +557,22 @@ export async function generateSettlement(formData: FormData) {
   }
 
   const totalPaymentGBP = Math.round(
-    payments.reduce((sum, payment) => sum + Number(payment.amountGBP), 0) * 100
+    payments.reduce(
+      (sum: number, payment: Payment) => sum + Number(payment.amountGBP),
+      0
+    ) * 100
   ) / 100;
   const totalRyanShareGBP = Math.round(
-    payments.reduce((sum, payment) => sum + Number(payment.ryanShareGBP), 0) *
-      100
+    payments.reduce(
+      (sum: number, payment: Payment) => sum + Number(payment.ryanShareGBP),
+      0
+    ) * 100
   ) / 100;
   const totalPartnerShareGBP = Math.round(
-    payments.reduce((sum, payment) => sum + Number(payment.partnerShareGBP), 0) *
-      100
+    payments.reduce(
+      (sum: number, payment: Payment) => sum + Number(payment.partnerShareGBP),
+      0
+    ) * 100
   ) / 100;
 
   const settlement = await prisma.weeklySettlement.create({
@@ -579,7 +590,7 @@ export async function generateSettlement(formData: FormData) {
   });
 
   await prisma.payment.updateMany({
-    where: { id: { in: payments.map((payment) => payment.id) } },
+    where: { id: { in: payments.map((payment: Payment) => payment.id) } },
     data: {
       settlementStatus: "SETTLED",
       settlementId: settlement.id
