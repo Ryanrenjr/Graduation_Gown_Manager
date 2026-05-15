@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "import:historical": "tsx scripts/importHistoricalOrders.ts",
+    "email:settlement-reminder": "tsx scripts/sendWeeklySettlementReminder.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:init": "npm run db:push && npm run prisma:generate && npm run prisma:seed"
