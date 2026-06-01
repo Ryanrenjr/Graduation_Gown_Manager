@@ -1,6 +1,6 @@
 export type BusinessPeriod = "GAO_PERIOD" | "RYAN_SOLO" | "XIONG_PERIOD";
 export type Person = "Ryan" | "Gao" | "Xiong" | "None";
-export type DegreeType = "Bachelor" | "Master";
+export type DegreeType = "Bachelor" | "Master" | "Bachelor&Master";
 export type CurrencyLabel = "GBP" | "RMB";
 export type PaymentType =
   | "DEPOSIT"

@@ -49,9 +49,10 @@ export function OrderForm({
 }) {
   const t = getT(locale);
   const [standard, setStandard] = useState(String(order?.standardPriceGBP ?? 0));
-  const [adjustment, setAdjustment] = useState(
-    String(order?.adjustmentGBP ?? 0)
+  const [actualTotal, setActualTotal] = useState(
+    String(order?.finalPriceGBP ?? order?.standardPriceGBP ?? 0)
   );
+  const [actualTotalTouched, setActualTotalTouched] = useState(Boolean(order));
   const [orderDate, setOrderDate] = useState(dateInput(order?.orderDate));
   const [qty, setQty] = useState<QtyState>({
     masterMQty: order?.masterMQty ?? 0,
@@ -64,13 +65,23 @@ export function OrderForm({
   const autoPrice = useMemo(() => calculateAutoPrice(qty), [qty]);
 
   useEffect(() => {
-    if (!order) setStandard(autoPrice.toFixed(2));
+    if (!order) {
+      const nextAutoPrice = autoPrice.toFixed(2);
+      setStandard(nextAutoPrice);
+      if (!actualTotalTouched) setActualTotal(nextAutoPrice);
+    }
+  }, [actualTotalTouched, autoPrice, order]);
+
+  useEffect(() => {
+    if (order) {
+      setStandard(autoPrice.toFixed(2));
+    }
   }, [autoPrice, order]);
 
-  const finalPrice = useMemo(() => {
-    const total = Number(standard || 0) + Number(adjustment || 0);
+  const adjustment = useMemo(() => {
+    const total = Number(actualTotal || 0) - Number(standard || 0);
     return Number.isFinite(total) ? total.toFixed(2) : "0.00";
-  }, [standard, adjustment]);
+  }, [actualTotal, standard]);
   const dailyAvailability = useMemo(
     () => availabilityForDate(inventory, existingOrders, orderDate, order?.id, qty),
     [inventory, existingOrders, orderDate, order?.id, qty]
@@ -145,6 +156,7 @@ export function OrderForm({
           >
             <option value="Master">Master</option>
             <option value="Bachelor">Bachelor</option>
+            <option value="Bachelor&Master">Bachelor & Master</option>
           </select>
         </Field>
       </div>
@@ -197,38 +209,33 @@ export function OrderForm({
         </section>
       ) : null}
 
-      <div className="grid gap-5 md:grid-cols-3">
-        <Field label={order ? t("standardPrice") : t("totalPrice")}>
+      <div className="grid gap-5 md:grid-cols-2">
+        <Field label={t("totalPrice")}>
           <input
-            className="input"
+            className="input bg-gray-50"
             type="number"
             step="0.01"
             name="standardPriceGBP"
             value={standard}
-            onChange={(event) => setStandard(event.target.value)}
             required
-            readOnly={!order}
+            readOnly
           />
         </Field>
-        {order ? (
-          <>
-            <Field label={t("adjustment")}>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                name="adjustmentGBP"
-                value={adjustment}
-                onChange={(event) => setAdjustment(event.target.value)}
-              />
-            </Field>
-            <Field label={t("finalPrice")}>
-              <input className="input bg-gray-50" value={finalPrice} readOnly />
-            </Field>
-          </>
-        ) : (
-          <input type="hidden" name="adjustmentGBP" value="0" />
-        )}
+        <Field label={locale === "zh" ? "实际总价 GBP" : "Actual Total GBP"}>
+          <input
+            className="input"
+            type="number"
+            step="0.01"
+            name="finalPriceGBP"
+            value={actualTotal}
+            onChange={(event) => {
+              setActualTotalTouched(true);
+              setActualTotal(event.target.value);
+            }}
+            required
+          />
+        </Field>
+        <input type="hidden" name="adjustmentGBP" value={adjustment} />
       </div>
 
       {!order ? (

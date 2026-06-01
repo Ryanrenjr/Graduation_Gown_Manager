@@ -81,7 +81,8 @@ export function OrderFilterPanel({
           <Select name="degreeType" label={labels.degree} value={params.degreeType} options={[
             ["", labels.all],
             ["Master", "Master"],
-            ["Bachelor", "Bachelor"]
+            ["Bachelor", "Bachelor"],
+            ["Bachelor&Master", "Bachelor & Master"]
           ]} />
           <Select name="currencyLabel" label={labels.currency} value={params.currencyLabel} options={[
             ["", labels.all],

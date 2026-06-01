@@ -227,9 +227,12 @@ export async function saveOrder(formData: FormData) {
   const bearQty = intValue(formData, "bearQty");
   const flagQty = intValue(formData, "flagQty");
   const standardPriceGBP = parseMoney(formData.get("standardPriceGBP"));
-  const adjustmentGBP = parseMoney(formData.get("adjustmentGBP"));
+  const submittedFinalPrice = formData.get("finalPriceGBP");
   const finalPriceGBP =
-    Math.round((standardPriceGBP + adjustmentGBP) * 100) / 100;
+    submittedFinalPrice === null || submittedFinalPrice === ""
+      ? Math.round((standardPriceGBP + parseMoney(formData.get("adjustmentGBP"))) * 100) / 100
+      : parseMoney(submittedFinalPrice);
+  const adjustmentGBP = Math.round((finalPriceGBP - standardPriceGBP) * 100) / 100;
   const orderDate = dateValue(formData, "orderDate");
   const paidInFull = text(formData, "paidInFull") === "1";
   const initialPaidGBP = parseMoney(formData.get("initialPaidGBP"));
